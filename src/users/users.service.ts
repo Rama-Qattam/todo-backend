@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
@@ -16,27 +20,40 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
-    const { username, email, password } = createUserDto;
-    const userExists = await this.userModel.findOne({
-      $or: [{ username }, { email }],
-    });
-    if (userExists)
-      throw new ConflictException('Username or email already exists');
+    const {
+      email,
+      password,
+      confirm_password,
+      first_name,
+      last_name,
+      birthdate,
+      phone_number,
+    } = createUserDto;
+
+    const userExists = await this.userModel.findOne({ email });
+    if (userExists) throw new ConflictException('Email already exists');
+
+    if (password !== confirm_password)
+      throw new BadRequestException('Passwords do not match');
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const nextId = await getNextSequence('users', this.counterModel);
+
     const createdUser = new this.userModel({
-      username,
+      _id: nextId,
+      first_name,
+      last_name,
       email,
       password: hashedPassword,
+      birthdate,
+      phone_number,
     });
 
     const savedUser = await createdUser.save();
-    const userObject = savedUser.toObject();
-    const { password: _, ...result } = userObject;
-    return result;
-  }
-  async findByUsername(username: string): Promise<User | null> {
-    return this.userModel.findOne({ username });
+
+    const userObj: any = savedUser.toObject();
+    delete userObj.password;
+    return userObj;
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {

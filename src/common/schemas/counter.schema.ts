@@ -5,10 +5,10 @@ export type CounterDocument = Counter & Document;
 
 @Schema()
 export class Counter {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   _id: string;
 
-  @Prop({ required: true, default: 0 })
+  @Prop({ required: true, default: 1 })
   seq: number;
 }
 

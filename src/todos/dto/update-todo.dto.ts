@@ -1,15 +1,30 @@
-import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsDateString,
+  IsEnum,
+} from 'class-validator';
+import { TodoStatus } from '../schemas/todo.schema';
 
 export class UpdateTodoDto {
   @IsOptional()
   @IsString()
-  readonly title?: string;
+  @MinLength(4)
+  @MaxLength(20)
+  readonly name?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   readonly description?: string;
 
   @IsOptional()
-  @IsBoolean()
-  readonly completed?: boolean;
+  @IsDateString()
+  readonly dueDate?: string;
+
+  @IsOptional()
+  @IsEnum(TodoStatus)
+  readonly status?: TodoStatus;
 }
