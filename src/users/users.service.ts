@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Injectable,
   ConflictException,
@@ -11,6 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { getNextSequence } from 'src/utils/get-next-sequence';
 import { Counter, CounterDocument } from 'src/common/schemas/counter.schema';
+import { UserWithTodos } from './interfaces/user-with-todos.interface';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +19,7 @@ export class UsersService {
     @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
+  async create(createUserDto: CreateUserDto): Promise<UserWithTodos> {
     const {
       email,
       password,
@@ -51,12 +51,52 @@ export class UsersService {
 
     const savedUser = await createdUser.save();
 
-    const userObj: any = savedUser.toObject();
-    delete userObj.password;
-    return userObj;
+    const userObj = savedUser.toObject() as Omit<UserWithTodos, 'todos'>;
+    return { ...userObj, todos: [] };
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email });
+  }
+
+  async findAllWithTodos(): Promise<UserWithTodos[]> {
+    const users = await this.userModel.aggregate<UserWithTodos>([
+      {
+        $lookup: {
+          from: 'todos',
+          localField: '_id',
+          foreignField: 'owner',
+          as: 'todos',
+        },
+      },
+      {
+        $project: {
+          password: 0,
+          __v: 0,
+        },
+      },
+    ]);
+    return users;
+  }
+  async findOneWithTodos(id: number): Promise<UserWithTodos | null> {
+    const users = await this.userModel.aggregate<UserWithTodos>([
+      { $match: { _id: id } },
+      {
+        $lookup: {
+          from: 'todos',
+          localField: '_id',
+          foreignField: 'owner',
+          as: 'todos',
+        },
+      },
+      {
+        $project: {
+          password: 0,
+          __v: 0,
+        },
+      },
+    ]);
+
+    return users[0] || null;
   }
 }

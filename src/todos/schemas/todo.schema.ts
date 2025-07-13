@@ -6,7 +6,6 @@ export enum TodoStatus {
   IN_PROGRESS = 'in progress',
   COMPLETE = 'complete',
   PENDING = 'pending',
-  DELETED = 'deleted',
 }
 
 export type TodoDocument = Todo &

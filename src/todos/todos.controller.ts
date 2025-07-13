@@ -10,6 +10,7 @@ import {
   Request,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -61,15 +62,19 @@ export class TodosController {
   }
 
   @Post()
+  @Post()
   async create(
     @Body() createTodoDto: CreateTodoDto,
     @Request() req: AuthRequest,
   ) {
-    console.log('typeof req.user.sub:', typeof req.user.sub, req.user.sub);
-    return this.todosService.create({
+    const todo = await this.todosService.create({
       ...createTodoDto,
       owner: Number(req.user.sub),
     });
+    return {
+      message: 'Task created successfully',
+      todo,
+    };
   }
 
   @Patch(':id')
@@ -82,7 +87,15 @@ export class TodosController {
     if (!todo) throw new NotFoundException('Todo not found');
     if (todo.owner !== Number(req.user.sub))
       throw new ForbiddenException('Not your todo');
-    return this.todosService.update(Number(id), updateTodoDto);
+    const updatedTodo = await this.todosService.update(
+      Number(id),
+      updateTodoDto,
+    );
+
+    return {
+      message: 'Task updated successfully',
+      todo: updatedTodo,
+    };
   }
 
   @Delete(':id')
@@ -91,7 +104,8 @@ export class TodosController {
     if (!todo) throw new NotFoundException('Todo not found');
     if (todo.owner !== Number(req.user.sub))
       throw new ForbiddenException('Not your todo');
-    return this.todosService.remove(Number(id));
+    await this.todosService.remove(Number(id));
+    return { message: 'Task deleted successfully' };
   }
 
   @Patch(':id/status')
@@ -100,10 +114,21 @@ export class TodosController {
     @Body('status') status: TodoStatus,
     @Request() req: AuthRequest,
   ) {
+    const allowedStatuses = [
+      TodoStatus.IN_PROGRESS,
+      TodoStatus.COMPLETE,
+      TodoStatus.PENDING,
+    ];
+    if (!allowedStatuses.includes(status)) {
+      throw new BadRequestException(
+        `Invalid status. Allowed values: ${allowedStatuses.join(', ')}`,
+      );
+    }
     const todo = await this.todosService.findOneByCustomId(Number(id));
     if (!todo) throw new NotFoundException('Todo not found');
     if (todo.owner !== Number(req.user.sub))
       throw new ForbiddenException('Not your todo');
-    return this.todosService.setStatus(Number(id), status);
+    await this.todosService.setStatus(Number(id), status);
+    return { message: 'Task status updated successfully' };
   }
 }

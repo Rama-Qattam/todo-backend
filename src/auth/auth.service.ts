@@ -25,7 +25,8 @@ export class AuthService {
 
   login(user: UserResponseDto) {
     const payload = {
-      username: `${user.first_name} ${user.last_name}`,
+      first_name: user.first_name,
+      last_name: user.last_name,
       sub: user.id,
     };
     return {

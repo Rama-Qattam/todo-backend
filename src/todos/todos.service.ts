@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Todo, TodoDocument, TodoStatus } from './schemas/todo.schema';
@@ -31,11 +31,19 @@ export class TodosService {
       status: TodoStatus.IN_PROGRESS,
     });
 
-    return todo.save();
+    const saved = await todo.save();
+    return {
+      message: 'Task created successfully',
+      todo: saved,
+    };
   }
 
   async findByOwner(owner: number) {
-    return this.todoModel.find({ owner }).sort({ createdAt: 1 }).exec();
+    return this.todoModel
+      .find({ owner })
+      .populate('owner')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   async findOneByCustomId(id: number) {
@@ -43,7 +51,7 @@ export class TodosService {
   }
 
   async update(id: number, updateTodoDto: UpdateTodoDto) {
-    const updateData: Record<string, any> = { ...updateTodoDto }; // <--- allows any type
+    const updateData: Record<string, any> = { ...updateTodoDto };
     if (updateTodoDto.dueDate) {
       const due = new Date(updateTodoDto.dueDate);
       if (due < new Date(new Date().toDateString()))
@@ -56,11 +64,25 @@ export class TodosService {
   }
 
   async remove(id: number) {
-    return this.todoModel.findOneAndDelete({ _id: id }).exec();
+    const deleted = await this.todoModel.findOneAndDelete({ _id: id }).exec();
+    if (!deleted) throw new NotFoundException('Todo not found');
+    return { message: 'Task deleted successfully' };
   }
+
   async setStatus(id: number, status: TodoStatus) {
     return this.todoModel
       .findOneAndUpdate({ _id: id }, { status }, { new: true })
+      .exec();
+  }
+
+  async findAllWithUsers() {
+    return this.todoModel
+      .find()
+      .populate({
+        path: 'owner',
+        select: '-password -__v',
+      })
+      .sort({ createdAt: -1 })
       .exec();
   }
 }
