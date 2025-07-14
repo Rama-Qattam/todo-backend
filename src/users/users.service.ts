@@ -7,7 +7,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto } from '../auth/dto/register.dto';
 import * as bcrypt from 'bcryptjs';
 import { getNextSequence } from 'src/utils/get-next-sequence';
 import { Counter, CounterDocument } from 'src/common/schemas/counter.schema';
