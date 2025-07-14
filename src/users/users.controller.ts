@@ -26,4 +26,12 @@ export class UsersController {
   getOneUserWithTodos(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOneWithTodos(id);
   }
+  @Post('reset-password')
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('password') password: string,
+    @Body('confirmPassword') confirmPassword: string,
+  ) {
+    return this.usersService.resetPassword(token, password, confirmPassword);
+  }
 }

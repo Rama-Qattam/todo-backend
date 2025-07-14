@@ -25,16 +25,20 @@ export class User {
 
   @Prop({ required: true })
   _id: number;
+
+  @Prop()
+  resetPasswordToken?: string;
+
+  @Prop()
+  resetPasswordExpires?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.set('toJSON', {
-  transform: (doc, ret) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  transform: (doc, ret: Partial<UserDocument>) => {
     ret.id = ret._id;
     delete ret._id;
-    delete ret.__v;
     delete ret.password;
     return ret;
   },
