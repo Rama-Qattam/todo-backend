@@ -32,8 +32,12 @@ export class Todo {
 
   @Prop({ ref: 'User', required: true })
   owner: number;
+
   @Prop({ required: true })
   _id: number;
+
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
 
 export const TodoSchema = SchemaFactory.createForClass(Todo);

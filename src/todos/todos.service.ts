@@ -40,14 +40,14 @@ export class TodosService {
 
   async findByOwner(owner: number) {
     return this.todoModel
-      .find({ owner })
+      .find({ owner, isDeleted: false })
       .populate('owner')
       .sort({ createdAt: -1 })
       .exec();
   }
 
   async findOneByCustomId(id: number) {
-    return this.todoModel.findOne({ _id: id }).exec();
+    return this.todoModel.findOne({ _id: id, isDeleted: false }).exec();
   }
 
   async update(id: number, updateTodoDto: UpdateTodoDto) {
@@ -59,30 +59,40 @@ export class TodosService {
       updateData.dueDate = due;
     }
     return this.todoModel
-      .findOneAndUpdate({ _id: id }, updateData, { new: true })
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateData, {
+        new: true,
+      })
       .exec();
-  }
-
-  async remove(id: number) {
-    const deleted = await this.todoModel.findOneAndDelete({ _id: id }).exec();
-    if (!deleted) throw new NotFoundException('Todo not found');
-    return { message: 'Task deleted successfully' };
   }
 
   async setStatus(id: number, status: TodoStatus) {
     return this.todoModel
-      .findOneAndUpdate({ _id: id }, { status }, { new: true })
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { status },
+        { new: true },
+      )
       .exec();
   }
 
   async findAllWithUsers() {
     return this.todoModel
-      .find()
+      .find({ isDeleted: false })
       .populate({
         path: 'owner',
         select: '-password -__v',
       })
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  async remove(id: number) {
+    const todo = await this.todoModel.findOne({ _id: id, isDeleted: false });
+    if (!todo) throw new NotFoundException('Todo not found');
+
+    todo.isDeleted = true;
+    await todo.save();
+
+    return { message: 'Task deleted successfully' };
   }
 }

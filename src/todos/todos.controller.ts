@@ -62,7 +62,6 @@ export class TodosController {
   }
 
   @Post()
-  @Post()
   async create(
     @Body() createTodoDto: CreateTodoDto,
     @Request() req: AuthRequest,
@@ -98,16 +97,6 @@ export class TodosController {
     };
   }
 
-  @Delete(':id')
-  async remove(@Param('id') id: string, @Request() req: AuthRequest) {
-    const todo = await this.todosService.findOneByCustomId(Number(id));
-    if (!todo) throw new NotFoundException('Todo not found');
-    if (todo.owner !== Number(req.user.sub))
-      throw new ForbiddenException('Not your todo');
-    await this.todosService.remove(Number(id));
-    return { message: 'Task deleted successfully' };
-  }
-
   @Patch(':id/status')
   async setStatus(
     @Param('id') id: string,
@@ -130,5 +119,15 @@ export class TodosController {
       throw new ForbiddenException('Not your todo');
     await this.todosService.setStatus(Number(id), status);
     return { message: 'Task status updated successfully' };
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string, @Request() req: AuthRequest) {
+    const todo = await this.todosService.findOneByCustomId(Number(id));
+    if (!todo) throw new NotFoundException('Todo not found');
+    if (todo.owner !== Number(req.user.sub))
+      throw new ForbiddenException('Not your todo');
+    await this.todosService.remove(Number(id));
+    return { message: 'Task deleted successfully' };
   }
 }

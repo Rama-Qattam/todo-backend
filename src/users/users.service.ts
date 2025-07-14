@@ -33,7 +33,10 @@ export class UsersService {
       phone_number,
     } = createUserDto;
 
-    const userExists = await this.userModel.findOne({ email });
+    const userExists = await this.userModel.findOne({
+      email,
+      isDeleted: false,
+    });
     if (userExists) throw new ConflictException('Email already exists');
 
     if (password !== confirm_password)
@@ -50,6 +53,7 @@ export class UsersService {
       password: hashedPassword,
       birthdate,
       phone_number,
+      isDeleted: false,
     });
 
     const savedUser = await createdUser.save();
@@ -59,11 +63,12 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ email });
+    return this.userModel.findOne({ email, isDeleted: false });
   }
 
   async findAllWithTodos(): Promise<UserWithTodos[]> {
     const users = await this.userModel.aggregate<UserWithTodos>([
+      { $match: { isDeleted: false } },
       {
         $lookup: {
           from: 'todos',
@@ -83,7 +88,7 @@ export class UsersService {
   }
   async findOneWithTodos(id: number): Promise<UserWithTodos | null> {
     const users = await this.userModel.aggregate<UserWithTodos>([
-      { $match: { _id: id } },
+      { $match: { _id: id, isDeleted: false } },
       {
         $lookup: {
           from: 'todos',
@@ -111,6 +116,7 @@ export class UsersService {
     const user = await this.userModel.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: new Date() },
+      isDeleted: false,
     });
     if (!user) throw new BadRequestException('Token invalid or expired.');
     if (newPassword !== confirmPassword)
@@ -124,7 +130,7 @@ export class UsersService {
     return { message: 'Password reset successful.' };
   }
   async requestPasswordReset(email: string) {
-    const user = await this.userModel.findOne({ email });
+    const user = await this.userModel.findOne({ email, isDeleted: false });
     if (!user) throw new NotFoundException('User not found');
 
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -137,5 +143,16 @@ export class UsersService {
     await sendResetEmail(user.email, resetToken);
 
     return { message: 'Reset password email sent' };
+  }
+
+  async softDeleteUser(id: number) {
+    const user = await this.userModel.findById(id);
+    if (!user || user.isDeleted)
+      throw new NotFoundException('User not found or already deleted');
+
+    user.isDeleted = true;
+    await user.save();
+
+    return { message: 'User deleted successfully' };
   }
 }
