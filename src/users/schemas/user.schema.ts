@@ -43,6 +43,7 @@ UserSchema.set('toJSON', {
     ret.id = ret._id;
     delete ret._id;
     delete ret.password;
+    delete ret.isDeleted;
     return ret;
   },
 });

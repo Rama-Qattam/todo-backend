@@ -6,7 +6,6 @@ import {
   IsOptional,
   IsDateString,
   IsString,
-  IsMobilePhone,
 } from 'class-validator';
 import { Match } from '../../utils/match.decorator';
 
@@ -40,6 +39,9 @@ export class CreateUserDto {
   readonly birthdate?: string;
 
   @IsOptional()
-  @IsMobilePhone(undefined, {}, { message: 'Phone number is invalid' })
+  @Matches(/^\+9627[789]\d{7}$/, {
+    message:
+      'Phone number must be a valid Jordanian number starting with +9627',
+  })
   readonly phone_number?: string;
 }
