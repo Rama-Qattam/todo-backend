@@ -2,7 +2,6 @@ export enum TodoStatus {
   Pending = 'Pending',
   InProgress = 'InProgress',
   Completed = 'Completed',
-  Cancelled = 'Cancelled',
 }
 
 export interface Todo {
