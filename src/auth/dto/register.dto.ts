@@ -10,8 +10,8 @@ import {
 import { Match } from '../../utils/match.decorator';
 
 export class CreateUserDto {
+  @IsString({ message: 'First name must be a string' }) //بدلت اماكنهم عشان تظهر مسج First name is required
   @IsNotEmpty({ message: 'First name is required' })
-  @IsString()
   readonly first_name: string;
 
   @IsNotEmpty({ message: 'Last name is required' })
